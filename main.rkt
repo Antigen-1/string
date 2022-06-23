@@ -36,7 +36,7 @@
 (define match-pattern*
   (lambda (port)
     (let loop ((result null))
-      (cond ((match-pattern port) => (lambda (p) (loop `(,@result p))))
+      (cond ((match-pattern port) => (lambda (p) (loop `(,@result ,p))))
             (else result)))))
 
 (define match-in-directory
