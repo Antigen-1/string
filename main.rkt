@@ -16,7 +16,7 @@
                  (cond ((<= v 0) (void))
                        (else
                         (if (bytes=? (subbytes bytes 0 v) (subbytes bytes index (+ v index)))
-                            (hash-set! table (cons state (bytes-ref bytes v)) (add1 v))
+                            (hash-ref! table (cons state (bytes-ref bytes v)) (add1 v))
                             (void))
                         (work (add1 index)))))
                (loop (add1 state) (read-byte port))))))))
