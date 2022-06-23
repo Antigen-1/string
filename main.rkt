@@ -1,5 +1,5 @@
 #lang racket/base
-(provide table compile-pattern)
+(provide table compile-pattern match-pattern)
 
 (define table (make-hash))
 
