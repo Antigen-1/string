@@ -1,5 +1,5 @@
 #lang racket/base
-(provide table compile-pattern match-pattern match-pattern* match-in-directory)
+(provide table compile-pattern match-pattern match-pattern* match-in-directory file-position->lines)
 
 (define table (make-hash))
 
@@ -44,3 +44,17 @@
     (parameterize ((current-directory path))
       (for/list ((file (in-directory)))
         (cons file (call-with-input-file file match-pattern*))))))
+
+(define file-position->lines
+  (lambda (file-position)
+    (with-input-from-file (car file-position)
+      (lambda ()
+        (let loop ((indexes (cdr file-position))
+                   (bytes (read-bytes-line))
+                   (count 0)
+                   (result null))
+          (define end (+ count (bytes-length bytes)))
+          (cond
+            ((or (eof-object? bytes) (null? indexes)) result)
+            ((and (>= (caar indexes) count) (<= (cadr indexes) end)) (loop (cdr indexes) (read-bytes-line) (add1 end) `(,@result ,bytes)))
+            (else (loop indexes (read-bytes-line) (add1 end) result))))))))
