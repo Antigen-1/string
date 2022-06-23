@@ -1,5 +1,5 @@
 #lang racket/base
-(provide table compile-pattern match-pattern match-pattern*)
+(provide table compile-pattern match-pattern match-pattern* match-in-directory)
 
 (define table (make-hash))
 
@@ -38,3 +38,9 @@
     (let loop ((result null))
       (cond ((match-pattern port) => (lambda (p) (loop `(,@result p))))
             (else result)))))
+
+(define match-in-directory
+  (lambda (path)
+    (parameterize ((current-directory path))
+      (for/list ((file (in-directory)))
+        (cons file (call-with-input-file file match-pattern*))))))
