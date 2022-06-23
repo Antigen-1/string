@@ -24,7 +24,7 @@
 
 (define match-pattern
   (lambda (port)
-    (define len (hash-ref! table #f))
+    (define len (hash-ref table #f))
     (let loop ((state 0) (count 0))
       (cond
         ((= state len) (cons (- count len) (sub1 count)))
