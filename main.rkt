@@ -7,6 +7,7 @@
   (lambda (bytes)
     (let ((port (open-input-bytes bytes))
           (len (bytes-length bytes)))
+      (hash-set! table #f len)
       (let loop ((state 0) (byte (read-byte port)))
         (cond ((= state len) (void))
               (else
@@ -20,3 +21,14 @@
                             (void))
                         (work (add1 index)))))
                (loop (add1 state) (read-byte port))))))))
+
+(define match-pattern
+  (lambda (port)
+    (define len (hash-ref! table #f))
+    (let loop ((state 0) (count 0))
+      (cond
+        ((= state len) (cons (- count len) (sub1 count)))
+        ((eof-object? (peek-byte port)) #f)
+        (else
+         (define next (hash-ref table (cons state (read-byte port)) (lambda () #f)))
+         (if next (loop next (add1 count)) (loop 0 (add1 count))))))))
