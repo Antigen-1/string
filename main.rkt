@@ -1,5 +1,5 @@
 #lang racket/base
-(provide table compile-pattern match-pattern)
+(provide table compile-pattern match-pattern match-pattern*)
 
 (define table (make-hash))
 
@@ -32,3 +32,9 @@
         (else
          (define next (hash-ref table (cons state (read-byte port)) (lambda () #f)))
          (if next (loop next (add1 count)) (loop 0 (add1 count))))))))
+
+(define match-pattern*
+  (lambda (port)
+    (let loop ((result null))
+      (cond ((match-pattern port) => (lambda (p) (loop `(,@result p))))
+            (else result)))))
