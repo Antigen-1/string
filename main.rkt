@@ -14,7 +14,9 @@
                (let work ((index 1))
                  (define v (- state index))
                  (cond ((<= v 0) (void))
-                       ((bytes=? (subbytes bytes 0 v) (subbytes bytes index v))
-                        (hash-set! table (cons state (bytes-ref bytes v)) (add1 v))
+                       (else
+                        (if (bytes=? (subbytes bytes 0 v) (subbytes bytes index v))
+                            (hash-set! table (cons state (bytes-ref bytes v)) (add1 v))
+                            (void))
                         (work (add1 index)))))
                (loop (add1 state) (read-byte port))))))))
