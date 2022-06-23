@@ -56,5 +56,5 @@
           (define end (+ count (bytes-length bytes)))
           (cond
             ((or (eof-object? bytes) (null? indexes)) result)
-            ((and (>= (caar indexes) count) (<= (cadr indexes) end)) (loop (cdr indexes) (read-bytes-line) (add1 end) `(,@result ,bytes)))
+            ((and (>= (caar indexes) count) (<= (cdar indexes) end)) (loop (cdr indexes) (read-bytes-line) (add1 end) `(,@result ,bytes)))
             (else (loop indexes (read-bytes-line) (add1 end) result))))))))
