@@ -46,6 +46,7 @@
       (for/list ((file (in-directory)))
         (cons file (call-with-input-file file match-pattern*))))))
 
+;;Linux only.
 (define file-position->lines
   (lambda (file-position)
     (with-input-from-file (car file-position)
