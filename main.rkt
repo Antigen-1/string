@@ -60,7 +60,9 @@
              (define end (+ count (bytes-length bytes)))
              (define next-indexes
                (let work ((indexes indexes))
-                 (if (and (>= (caar indexes) count) (<= (cdar indexes) end))
-                     (work (cdr indexes))
-                     indexes)))
+                 (cond
+                   ((null? indexes) indexes)
+                   ((and (>= (caar indexes) count) (<= (cdar indexes) end))
+                    (work (cdr indexes)))
+                   (else indexes))))
              (loop next-indexes (read-bytes-line) (add1 end) (if (= (length next-indexes) (length indexes)) result `(,@result ,bytes))))))))))
