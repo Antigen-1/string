@@ -20,6 +20,7 @@
                             (hash-ref! table (cons state (bytes-ref bytes v)) (add1 v))
                             (void))
                         (work (add1 index)))))
+               (hash-ref! table (cons state (bytes-ref bytes 0)) 1)
                (loop (add1 state) (read-byte port))))))))
 
 (define match-pattern
