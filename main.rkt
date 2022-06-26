@@ -1,6 +1,6 @@
 #lang racket/base
 (require db/base db/sqlite3 racket/match)
-(provide table compile-pattern match-pattern match-pattern* match-in-directory file-position->lines)
+(provide table compile-pattern match-pattern match-pattern* match-in-directory file-position->lines save-pattern load-pattern)
 
 (define table (make-hash))
 
