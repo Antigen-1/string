@@ -1,5 +1,5 @@
 #lang racket/base
-(require db/base db/sqlite3 racket/match)
+(require db/base db/sqlite3 racket/match racket/list)
 (provide table compile-pattern match-pattern match-pattern* match-in-directory file-position->lines save-pattern load-pattern)
 
 (define table (make-hash))
@@ -52,20 +52,21 @@
   (lambda (path [mode 'create])
     (let ((connection (sqlite3-connect #:database path #:mode mode)))
       (query-exec connection "create table pattern (
-      o int primary key not null,
-      c int,
-      r int,
+      id integer primary key not null,
+      o integer,
+      c integer,
+      r integer
     );")
       (match table ((hash-table (#f len) ((cons o c) r) ...)
-                    (query-exec connection "insert into pattern values ($1 ,$2 ,null);" -1 len)
-                    (map (lambda (o c r) (query-exec "insert into pattern values ($1 ,$2 ,$3);" o c r)) o c r))))))
+                    (query-exec connection "insert into pattern values (-1 ,$1 ,null ,null);" len)
+                    (map (lambda (id o c r) (query-exec connection "insert into pattern values ($1 ,$2 ,$3 ,$4);" id o c r)) (range (length o)) o c r))))))
 
 (define load-pattern
   (lambda (path)
     (let ((connection (sqlite3-connect #:database path #:mode 'read-only)))
       (hash-clear! table)
-      (hash-set! table #f (query-value connection "select c from pattern where r = null;"))
-      (match (query-rows connection "select * from pattern where r is not null;")
+      (hash-set! table #f (query-value connection "select o from pattern where r = null;"))
+      (match (query-rows connection "select o, c, r from pattern where r is not null;")
         ((list (vector o c r) ...)
          (map (lambda (o c r) (hash-set! table (cons o c) r)) o c r))))))
 
