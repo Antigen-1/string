@@ -65,8 +65,8 @@
   (lambda (path)
     (let ((connection (sqlite3-connect #:database path #:mode 'read-only)))
       (hash-clear! table)
-      (hash-set! table #f (query-value connection "select o from pattern where r = null;"))
-      (match (query-rows connection "select o, c, r from pattern where r is not null;")
+      (hash-set! table #f (query-value connection "select o from pattern where id = -1;"))
+      (match (query-rows connection "select o, c, r from pattern where id >= 0;")
         ((list (vector o c r) ...)
          (map (lambda (o c r) (hash-set! table (cons o c) r)) o c r))))))
 
