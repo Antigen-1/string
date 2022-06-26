@@ -1,4 +1,5 @@
 #lang racket/base
+(require db/base db/sqlite3 racket/match)
 (provide table compile-pattern match-pattern match-pattern* match-in-directory file-position->lines)
 
 (define table (make-hash))
@@ -45,6 +46,28 @@
     (parameterize ((current-directory path))
       (for/list ((file (in-directory)))
         (cons file (call-with-input-file file match-pattern*))))))
+
+;;Sqlite3 is necessary.
+(define save-pattern
+  (lambda (path [mode 'create])
+    (let ((connection (sqlite3-connect #:database path #:mode mode)))
+      (query-exec connection "create table pattern (
+      o int primary key not null,
+      c int,
+      r int,
+    );")
+      (match table ((hash-table (#f len) ((cons o c) r) ...)
+                    (query-exec connection "insert into pattern values ($1 ,$2 ,null);" -1 len)
+                    (map (lambda (o c r) (query-exec "insert into pattern values ($1 ,$2 ,$3);" o c r)) o c r))))))
+
+(define load-pattern
+  (lambda (path)
+    (let ((connection (sqlite3-connect #:database path #:mode 'read-only)))
+      (hash-clear! table)
+      (hash-set! table #f (query-value connection "select c from pattern where r = null;"))
+      (match (query-rows connection "select * from pattern where r is not null;")
+        ((list (vector o c r) ...)
+         (map (lambda (o c r) (hash-set! table (cons o c) r)) o c r))))))
 
 ;;Linux only.
 (define file-position->lines
