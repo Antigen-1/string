@@ -99,7 +99,7 @@
           (generator (generator () (let loop ((id 0)) (yield id) (loop (add1 id))))))
       (query-exec connection "create table inverted_index (
         id int primary key not null,
-        word text,
+        word int,
         path text,
         start int,
         end int
@@ -107,7 +107,7 @@
       (parameterize ((current-directory directory))
         (with-input-from-file "/usr/share/dict/words"
           (lambda ()
-            (let loop ((word (read-bytes-line)))
+            (let loop ((index 0) (word (read-bytes-line)))
               (cond ((eof-object? word) (void))
                     (else
                      (hash-clear! table)
@@ -127,4 +127,4 @@
                                       (generator) word path-string (car start) (car end))
                                      (work (cdr start) (cdr end)))))))
                          path start end)))
-                     (loop (read-bytes-line)))))))))))
+                     (loop (add1 index) (read-bytes-line)))))))))))
