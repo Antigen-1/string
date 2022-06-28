@@ -49,24 +49,28 @@
 
 ;;Sqlite3 is necessary.
 (define save-pattern
-  (lambda (path [mode 'create])
+  (lambda (path [table-name "pattern"] [mode 'create])
     (let ((connection (sqlite3-connect #:database path #:mode mode)))
-      (query-exec connection "create table pattern (
+      (query-exec connection (format "create table ~a (
       id integer primary key not null,
       o integer,
       c integer,
       r integer
-    );")
+    );"
+                                     table-name))
       (match table ((hash-table (#f len) ((cons o c) r) ...)
-                    (query-exec connection "insert into pattern values (-1 ,$1 ,null ,null);" len)
-                    (map (lambda (id o c r) (query-exec connection "insert into pattern values ($1 ,$2 ,$3 ,$4);" id o c r)) (range (length o)) o c r))))))
+                    (query-exec connection (format "insert into ~a values (-1 ,$1 ,null ,null);" table-name) len)
+                    (map
+                     (lambda (id o c r)
+                       (query-exec connection (format "insert into ~a values ($1 ,$2 ,$3 ,$4);" table-name) id o c r))
+                     (range (length o)) o c r))))))
 
 (define load-pattern
-  (lambda (path)
+  (lambda (path [table-name "pattern"])
     (let ((connection (sqlite3-connect #:database path #:mode 'read-only)))
       (hash-clear! table)
-      (hash-set! table #f (query-value connection "select o from pattern where id = -1;"))
-      (match (query-rows connection "select o, c, r from pattern where id >= 0;")
+      (hash-set! table #f (query-value connection (format "select o from ~a where id = -1;" table-name)))
+      (match (query-rows connection (format "select o, c, r from ~a where id >= 0;" table-name))
         ((list (vector o c r) ...)
          (map (lambda (o c r) (hash-set! table (cons o c) r)) o c r))))))
 
