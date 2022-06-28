@@ -113,15 +113,15 @@
             (filter
              (lambda (word) (findf (lambda (w) (string-ci=? w word)) system-words))
              (remove-duplicates
-              string-ci=?
               (map
                bytes->string/utf-8
-               (regexp-match* #px#"[[:alnum:]]+" (apply input-port-append #t (for/list ((file (in-directory))) (open-input-file file))))))))
+               (regexp-match* #px#"[[:alnum:]]+" (apply input-port-append #t (for/list ((file (in-directory))) (open-input-file file)))))
+              string-ci=?)))
            string<?))
         (let loop ((word-list word-list))
           (cond ((null? word-list) (void))
                 (else
-                 (let ((word (car word-list)))
+                 (let ((word (string->bytes/utf-8 (car word-list))))
                    (hash-clear! table)
                    (compile-pattern word)
                    (match (match-in-directory ".")
