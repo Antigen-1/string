@@ -1,6 +1,6 @@
 #lang racket/base
-(require db/base db/sqlite3 racket/match racket/list racket/generator racket/port racket/file)
-(provide table compile-pattern match-pattern match-pattern* match-in-directory file-position->lines save-pattern load-pattern save-inverted-index)
+(require db/base db/sqlite3 racket/match racket/list)
+(provide table compile-pattern match-pattern match-pattern* match-in-directory file-position->lines save-pattern load-pattern)
 
 (define table (make-hash))
 
@@ -91,52 +91,3 @@
                     (work (cdr indexes)))
                    (else indexes))))
              (loop next-indexes (read-bytes-line) (add1 end) (if (= (length next-indexes) (length indexes)) result `(,@result ,bytes))))))))))
-
-;;Unix only and sqlite3 is needed.
-(define save-inverted-index
-  (lambda (directory database [mode 'create])
-    (let ((connection (sqlite3-connect #:database database #:mode mode))
-          (generator (generator () (let loop ((id 0)) (yield id) (loop (add1 id))))))
-      (query-exec connection "create table inverted_index (
-        id int primary key not null,
-        word text,
-        path text,
-        start int,
-        end int
-      );")
-      (parameterize ((current-directory directory))
-        (define system-words (file->lines "/usr/share/dict/words"))
-        (define word-list
-          (sort
-           (map
-            string-downcase
-            (filter
-             (lambda (word) (findf (lambda (w) (string-ci=? w word)) system-words))
-             (remove-duplicates
-              (map
-               bytes->string/utf-8
-               (regexp-match* #px#"[[:alnum:]]+" (apply input-port-append #t (for/list ((file (in-directory))) (open-input-file file)))))
-              string-ci=?)))
-           string<?))
-        (let loop ((word-list word-list))
-          (cond ((null? word-list) (void))
-                (else
-                 (let ((word (string->bytes/utf-8 (car word-list))))
-                   (hash-clear! table)
-                   (compile-pattern word)
-                   (match (match-in-directory ".")
-                     ((list (list path (cons start end) ...) ...)
-                      (map
-                       (lambda (path start end)
-                         (let ((path-string (path->string path)))
-                           (let work ((start start) (end end))
-                             (if (or (null? start) (null? end))
-                                 (void)
-                                 (begin
-                                   (query-exec
-                                    connection
-                                    "insert into inverted_index values ($1, $2, $3, $4, $5);"
-                                    (generator) word path-string (car start) (car end))
-                                   (work (cdr start) (cdr end)))))))
-                       path start end))))
-                 (loop (cdr word-list)))))))))
