@@ -52,7 +52,7 @@
         (cons file (call-with-input-file file match-pattern*))))))
 
 (define getLongestSubbytes
-  (lambda (bytes1 bytes2 #:char=? [char=? char=?])
+  (lambda (bytes1 bytes2)
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
     (let loop ((i 0) (j 0) (result null))
@@ -68,7 +68,7 @@
          (map
           (lambda (index) (list maximum (quotient index len2) (remainder index len2)))
           (indexes-of result maximum =)))
-        ((char=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
+        ((= (bytes-ref bytes1 i) (bytes-ref bytes2 j))
          (if (or (< (sub1 i) 0) (< (sub1 j) 0))
              (loop next-i next-j `(,@result 1))
              (loop next-i next-j `(,@result (add1 (list-ref result (+ (* len2 (sub1 i)) j)))))))
