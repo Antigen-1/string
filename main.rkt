@@ -59,9 +59,10 @@
       (cond
         ((and (not i) (not j))
          (define maximum (apply max result))
-         (map
-          (lambda (index) (list maximum (quotient index len2) (remainder index len2)))
-          (indexes-of result maximum =)))
+         (define index (index-of result maximum =))
+         (define end (add1 (quotient index len2)))
+         (define start (- end maximum))
+         (subbytes bytes1 start end))
         (else
          (define state1 (= len1 (add1 i)))
          (define state2 (= len2 (add1 j)))
