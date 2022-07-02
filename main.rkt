@@ -63,7 +63,7 @@
               (state2 (values (add1 i) 0))
               (else (values i (add1 j)))))
       (cond
-        ((and (not next-i) (not next-j))
+        ((and (not i) (not j))
          (define maximum (apply max result))
          (map
           (lambda (index) (list maximum (quotient index len2) (remainder index len2)))
