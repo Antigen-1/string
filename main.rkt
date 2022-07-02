@@ -71,7 +71,7 @@
         ((= (bytes-ref bytes1 i) (bytes-ref bytes2 j))
          (if (or (< (sub1 i) 0) (< (sub1 j) 0))
              (loop next-i next-j `(,@result 1))
-             (loop next-i next-j `(,@result (add1 (list-ref result (+ (* len2 (sub1 i)) j)))))))
+             (loop next-i next-j `(,@result ,(add1 (list-ref result (+ (* len2 (sub1 i)) j)))))))
         (else (loop next-i next-j `(,@result 0)))))))
 
 ;;Sqlite3 is necessary.
