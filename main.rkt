@@ -52,7 +52,7 @@
         (cons file (call-with-input-file file match-pattern*))))))
 
 (define getLongestCommonSubbytes
-  (lambda (bytes1 bytes2)
+  (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
     (let loop ((i 0) (j 0) (result null))
@@ -71,7 +71,7 @@
                  (state2 (values (add1 i) 0))
                  (else (values i (add1 j)))))
          (cond
-           ((= (bytes-ref bytes1 i) (bytes-ref bytes2 j))
+           ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
                 (loop next-i next-j `(,@result 1))
                 (loop next-i next-j `(,@result ,(add1 (list-ref result (+ (* len2 (sub1 i)) (sub1 j))))))))
