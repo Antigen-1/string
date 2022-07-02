@@ -51,6 +51,29 @@
       (for/list ((file (in-directory)))
         (cons file (call-with-input-file file match-pattern*))))))
 
+(define getLongestSubbytes
+  (lambda (bytes1 bytes2)
+    (define len1 (bytes-length bytes1))
+    (define len2 (bytes-length bytes2))
+    (let loop ((i 0) (j 0) (result null))
+      (define state1 (= len1 (add1 i)))
+      (define state2 (= len2 (add1 j)))
+      (define-values (next-i next-j)
+        (cond ((and state1 state2) (values #f #f))
+              (state2 (values (add1 i) 0))
+              (else (values i (add1 j)))))
+      (cond
+        ((and (not next-i) (not next-j))
+         (define maximum (apply max result))
+         (map
+          (lambda (index) (list maximum (quotient index len2) (remainder index len2)))
+          (indexes-of result maximum =)))
+        ((char=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
+         (if (or (< (sub1 i) 0) (< (sub1 j) 0))
+             (loop next-i next-j `(,@result 1))
+             (loop next-i next-j `(,@result (add1 (list-ref result (+ (* len2 (sub1 i)) j)))))))
+        (else (loop next-i next-j `(,@result 0)))))))
+
 ;;Sqlite3 is necessary.
 (define save-pattern
   (lambda (path [table-name "pattern"] [mode 'create])
