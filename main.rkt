@@ -55,7 +55,8 @@
   (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
-    (let loop ((i 0) (j 0) (result null))
+    (define result (make-list (* len1 len2) 0))
+    (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
          (define maximum (apply max result))
@@ -75,9 +76,10 @@
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
-                (loop next-i next-j `(,@result 1))
-                (loop next-i next-j `(,@result ,(add1 (list-ref result (+ (* len2 (sub1 i)) (sub1 j))))))))
-           (else (loop next-i next-j `(,@result 0)))))))))
+                (list-set result (+ (* i len2) j) 1)
+                (list-set result (+ (* i len2) j) (add1 (list-ref result (+ (* len2 (sub1 i)) (sub1 j))))))
+            (loop next-i next-j))
+           (else (loop next-i next-j))))))))
 
 ;;Sqlite3 is necessary.
 (define save-pattern
