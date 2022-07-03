@@ -55,7 +55,7 @@
   (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
-    (define result (make-list (* len1 len2) 0))
+    (define result (make-vector (* len1 len2) 0))
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
@@ -65,7 +65,7 @@
             (define end (add1 (quotient index len2)))
             (define start (- end maximum))
             (subbytes bytes1 start end))
-          (indexes-of result maximum =)))
+          (indexes-of (vector->list result) maximum =)))
         (else
          (define state1 (= len1 (add1 i)))
          (define state2 (= len2 (add1 j)))
@@ -76,8 +76,8 @@
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
-                (list-set result (+ (* i len2) j) 1)
-                (list-set result (+ (* i len2) j) (add1 (list-ref result (+ (* len2 (sub1 i)) (sub1 j))))))
+                (vector-set! result (+ (* i len2) j) 1)
+                (vector-set! result (+ (* i len2) j) (add1 (vector-ref result (+ (* len2 (sub1 i)) (sub1 j))))))
             (loop next-i next-j))
            (else (loop next-i next-j))))))))
 
