@@ -59,13 +59,14 @@
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
-         (define maximum (apply max result))
+         (define result-list (vector->list result))
+         (define maximum (apply max result-list))
          (map
           (lambda (index)
             (define end (add1 (quotient index len2)))
             (define start (- end maximum))
             (subbytes bytes1 start end))
-          (indexes-of (vector->list result) maximum =)))
+          (indexes-of result-list maximum =)))
         (else
          (define state1 (= len1 (add1 i)))
          (define state2 (= len2 (add1 j)))
