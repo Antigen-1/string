@@ -13,10 +13,11 @@
                     (init len)
                     (init wid)
                     (init [v 0])
+                    (init [mat #f])
                     (super-new)
                     (define length len)
                     (define width wid)
-                    (define matrix (make-vector (* len wid) v))
+                    (define matrix (if (vector? mat) mat (make-vector (* len wid) v)))
                     (define/private get-index (lambda (i j) (+ (* i length) j)))
                     (define/private locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
                     (define/public location-of
