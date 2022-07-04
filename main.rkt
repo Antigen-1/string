@@ -19,11 +19,11 @@
                     (define matrix (make-vector (* len wid) v))
                     (define/private get-index (lambda (i j) (+ (* i length) j)))
                     (define/private locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
-                    (define/public data-ref (lambda (i j) (vector-ref matrix (get-index i j))))
-                    (define/public data-set (lambda (i j v) (vector-set! matrix (get-index i j) v)))
-                    (define/public subdata
+                    (define/public matrix-ref (lambda (i j) (vector-ref matrix (get-index i j))))
+                    (define/public matrix-set (lambda (i j v) (vector-set! matrix (get-index i j) v)))
+                    (define/public submatrix
                       (lambda (i j) (apply vector-append (map (lambda (i) (vector-copy matrix (* i length) (add1 (+ j (* i length))))) (range (add1 i))))))
-                    (define/public data->list (lambda () (vector->list matrix))))))
+                    (define/public matrix->list (lambda () (vector->list matrix))))))
 
 (require 'data)
 
@@ -80,7 +80,7 @@
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
-         (define result-list (send result data->list))
+         (define result-list (send result matrix->list))
          (define maximum (apply max result-list))
          (map
           (lambda (index)
@@ -98,8 +98,8 @@
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
-                (send result data-set i j 1)
-                (send result data-set i j (add1 (send result data-ref (sub1 i) (sub1 j)))))
+                (send result matrix-set i j 1)
+                (send result matrix-set i j (add1 (send result matrix-ref (sub1 i) (sub1 j)))))
             (loop next-i next-j))
            (else (loop next-i next-j))))))))
 
