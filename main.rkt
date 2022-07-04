@@ -129,7 +129,7 @@
   (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
-    (define result (new matrix% [len len2] [wid len1] [v 0]))
+    (define result (new (if (<= (* len1 len2) (expt 10 7)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
@@ -159,7 +159,7 @@
   (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
-    (define result (new matrix% [len len2] [wid len1] [v 0]))
+    (define result (new (if (<= (* len1 len2) (expt 10 7)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
