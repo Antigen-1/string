@@ -19,8 +19,8 @@
                     (define length len)
                     (define width wid)
                     (define matrix (if (and (vector? mat) (not (immutable? mat))) mat (make-vector (* len wid) v)))
-                    (define get-index (lambda (i j) (+ (* i length) j)))
-                    (define locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
+                    (define/public get-index (lambda (i j) (+ (* i length) j)))
+                    (define/public locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
                     (define/public location-of
                       (lambda (value pred)
                         (let loop ((index 0))
