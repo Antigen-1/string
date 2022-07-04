@@ -24,12 +24,12 @@
                         (locate-index
                          (let loop ((index index))
                            (if (= index (* width length))
-                               #f
+                               (values #f #f)
                                (let ((element (vector-ref matrix index))) (if (pred value element) index (loop (add1 index)))))))))
                     (define/public locations-of
                       (lambda (value pred)
                         (let loop ((index 0) (result null))
-                          (define-values (i j) (cond ((location-of value pred index)) (else (values #f #f))))
+                          (define-values (i j) (location-of value pred index))
                           (if (and (not i) (not j))
                               (reverse result)
                               (loop (add1 (get-index i j)) (cons (cons i j) result))))))
