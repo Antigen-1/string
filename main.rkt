@@ -96,14 +96,13 @@
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
-         (define result-list (send result matrix->list))
-         (define maximum (apply max result-list))
+         (define maximum (send result matrix-max))
          (map
-          (lambda (index)
-            (define end (add1 (quotient index len2)))
+          (lambda (p)
+            (define end (add1 (car p)))
             (define start (- end maximum))
             (subbytes bytes1 start end))
-          (indexes-of result-list maximum =)))
+          (send result locations-of maximum =)))
         (else
          (define state1 (= len1 (add1 i)))
          (define state2 (= len2 (add1 j)))
