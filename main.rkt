@@ -4,7 +4,7 @@
 ;;你应该随程序获得一份 GNU 通用公共许可证的复本。如果没有，请看 <https://www.gnu.org/licenses/>。
 #lang racket/base
 (require db/base db/sqlite3 racket/match racket/list)
-(provide table compile-pattern match-pattern match-pattern* match-in-directory file-position->lines save-pattern load-pattern getLongestCommonSubbytes)
+(provide table compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern getLongestCommonSubbytes)
 
 (define table (make-hash))
 
@@ -108,25 +108,3 @@
       (match (query-rows connection (format "select o, c, r from ~a where id >= 0;" table-name))
         ((list (vector o c r) ...)
          (map (lambda (o c r) (hash-set! table (cons o c) r)) o c r))))))
-
-;;Linux only.
-(define file-position->lines
-  (lambda (file-position)
-    (with-input-from-file (car file-position)
-      (lambda ()
-        (let loop ((indexes (cdr file-position))
-                   (bytes (read-bytes-line))
-                   (count 0)
-                   (result null))
-          (cond
-            ((or (eof-object? bytes) (null? indexes)) result)
-            (else
-             (define end (+ count (bytes-length bytes)))
-             (define next-indexes
-               (let work ((indexes indexes))
-                 (cond
-                   ((null? indexes) indexes)
-                   ((and (>= (caar indexes) count) (<= (cdar indexes) end))
-                    (work (cdr indexes)))
-                   (else indexes))))
-             (loop next-indexes (read-bytes-line) (add1 end) (if (= (length next-indexes) (length indexes)) result `(,@result ,bytes))))))))))
