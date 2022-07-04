@@ -59,27 +59,27 @@
       (define value v)
       (inherit get-index)
       (define/public matrix-remove (lambda (i j) (hash-remove! matrix (cons i j))))
-      (define/public matrix-ref (lambda (i j) (hash-ref matrix (cons i j) value)))
-      (define/public matrix-set (lambda (i j v) (hash-set! matrix (cons i j) v)))
-      (define/public matrix->list (lambda () (hash->list matrix)))
-      (define/public submatrix (lambda (end-i end-j)
-                                 (define submatrix (new hash-matrix% [v value]))
-                                 (match matrix
-                                   ((hash-table ((cons i j) v) ...)
-                                    (map (lambda (i j v) (if (and (<= i end-i) (<= j end-j)) (send submatrix matrix-set i j v) (void))) i j v)))
-                                 submatrix))
-      (define/public location-of (lambda (value pred)
-                                   (define location
-                                     (car
-                                      (findf
-                                       (lambda (element) (pred value (cdr element)))
-                                       (sort (hash->list matrix) #:key (lambda (e) (let ((i (caar e)) (j (cdar e))) (get-index i j))) <))))
-                                   (values (car location) (cdr location))))
-      (define/public locations-of (lambda (value pred)
-                                    (sort (filter values (hash-map matrix (lambda (p v) (if (pred value v) p #f))))
-                                          #:key (lambda (e) (let ((i (car e)) (j (cdr e))) (get-index i j))) <)))
-      (define/public matrix-max (lambda ([proc values]) (apply argmax proc (hash-values matrix))))
-      (define/public matrix-min (lambda ([proc values]) (apply argmin proc (hash-values matrix)))))))
+      (define/override matrix-ref (lambda (i j) (hash-ref matrix (cons i j) value)))
+      (define/override matrix-set (lambda (i j v) (hash-set! matrix (cons i j) v)))
+      (define/override matrix->list (lambda () (hash->list matrix)))
+      (define/override submatrix (lambda (end-i end-j)
+                                   (define submatrix (new hash-matrix% [v value]))
+                                   (match matrix
+                                     ((hash-table ((cons i j) v) ...)
+                                      (map (lambda (i j v) (if (and (<= i end-i) (<= j end-j)) (send submatrix matrix-set i j v) (void))) i j v)))
+                                   submatrix))
+      (define/override location-of (lambda (value pred)
+                                     (define location
+                                       (car
+                                        (findf
+                                         (lambda (element) (pred value (cdr element)))
+                                         (sort (hash->list matrix) #:key (lambda (e) (let ((i (caar e)) (j (cdar e))) (get-index i j))) <))))
+                                     (values (car location) (cdr location))))
+      (define/override locations-of (lambda (value pred)
+                                      (sort (filter values (hash-map matrix (lambda (p v) (if (pred value v) p #f))))
+                                            #:key (lambda (e) (let ((i (car e)) (j (cdr e))) (get-index i j))) <)))
+      (define/override matrix-max (lambda ([proc values]) (apply argmax proc (hash-values matrix))))
+      (define/override matrix-min (lambda ([proc values]) (apply argmin proc (hash-values matrix)))))))
 
 (require 'data)
 
