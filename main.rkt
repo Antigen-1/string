@@ -135,10 +135,12 @@
     (define result (new (if (<= (* len1 len2) (expt 10 7)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
     (define clean
       (if (is-a? result hash-matrix%)
-          (lambda () (let ((max (send result matrix-max))
-                           (list (send result matrix->list)))
+          (lambda () (let ((max (send result matrix-max)))
                        (define-values (i j) (send result location-of max =))
-                       (map (lambda (p) (if (and (< (caar p) i) (< (cdar p) j)) (send result matrix-remove (caar p) (cdar p)) (void))) list)))
+                       (if (and (>= i 1) (>= j 1))
+                           (let ((list (send (send result submatrix (sub1 i) (sub1 j)) matrix->list)))
+                             (map (lambda (e) (send result matrix-remove (caar e) (cdar e))) list))
+                           (void))))
           (void)))
     (let loop ((i 0) (j 0))
       (cond
