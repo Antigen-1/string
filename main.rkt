@@ -29,10 +29,10 @@
                     (define/public locations-of
                       (lambda (value pred)
                         (let loop ((index 0) (result null))
-                          (define next-index (location-of value pred index))
-                          (if (not next-index)
+                          (define-values (i j) (cond ((location-of value pred index)) (else (values #f #f))))
+                          (if (and (not i) (not j))
                               (reverse result)
-                              (loop (add1 next-index) (cons (let-values (((i j) (locate-index next-index))) (cons i j)) result))))))
+                              (loop (add1 (get-index i j)) (cons (cons i j) result))))))
                     (define/public matrix-max (lambda ([proc values]) (vector-argmax proc matrix)))
                     (define/public matrix-min (lambda ([proc values]) (vector-argmin proc matrix)))
                     (define/public matrix-ref (lambda (i j) (vector-ref matrix (get-index i j))))
