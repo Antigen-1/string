@@ -11,7 +11,7 @@
   (require racket/class racket/vector racket/list racket/match)
   (provide matrix% hash-matrix%)
   (define hash-matrix%
-    (class object%
+    (class matrix%
       (init len)
       (init wid)
       (init [v 0])
@@ -19,8 +19,10 @@
       (super-new)
       (define length len)
       (define width wid)
-      (define matrix (if (hash? mat) mat (make-hash)))
+      (define matrix (if (and (hash? mat) (not (immutable? mat))) mat (make-hash)))
       (define value v)
+      (inherit get-index)
+      (define/public matrix-remove (lambda (i j) (hash-remove! matrix (cons i j))))
       (define/public matrix-ref (lambda (i j) (hash-ref matrix (cons i j) value)))
       (define/public matrix-set (lambda (i j v) (hash-set! matrix (cons i j) v)))
       (define/public matrix->list (lambda () (hash->list matrix)))
@@ -35,10 +37,11 @@
                                      (car
                                       (findf
                                        (lambda (element) (pred value (cdr element)))
-                                       (sort (hash->list matrix) #:key (lambda (e) (let ((i (caar e)) (j (cdar e))) (+ j (* i length)))) <))))
+                                       (sort (hash->list matrix) #:key (lambda (e) (let ((i (caar e)) (j (cdar e))) (get-index i j))) <))))
                                    (values (car location) (cdr location))))
       (define/public locations-of (lambda (value pred)
-                                    (filter values (hash-map matrix (lambda (p v) (if (pred value v) p #f)) #t))))
+                                    (sort (filter values (hash-map matrix (lambda (p v) (if (pred value v) p #f))))
+                                          #:key (lambda (e) (let ((i (car e)) (j (cdr e))) (get-index i j))) <)))
       (define/public matrix-max (lambda ([proc values]) (apply argmax proc (hash-values matrix))))
       (define/public matrix-min (lambda ([proc values]) (apply argmin proc (hash-values matrix))))))
   (define matrix% (class object%
@@ -49,7 +52,7 @@
                     (super-new)
                     (define length len)
                     (define width wid)
-                    (define matrix (if (vector? mat) mat (make-vector (* len wid) v)))
+                    (define matrix (if (and (vector? mat) (not (immutable? mat))) mat (make-vector (* len wid) v)))
                     (define/private get-index (lambda (i j) (+ (* i length) j)))
                     (define/private locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
                     (define/public location-of
@@ -130,6 +133,13 @@
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
     (define result (new (if (<= (* len1 len2) (expt 10 7)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
+    (define clean
+      (if (is-a? result hash-matrix%)
+          (lambda () (let ((max (send result matrix-max))
+                           (list (send result matrix->list)))
+                       (define-values (i j) (send result location-of max =))
+                       (map (lambda (p) (if (and (< (caar p) i) (< (cdar p) j)) (send result matrix-remove (caar p) (cdar p)) (void))) list)))
+          (void)))
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
@@ -147,6 +157,7 @@
            (cond ((and state1 state2) (values #f #f))
                  (state2 (values (add1 i) 0))
                  (else (values i (add1 j)))))
+         (if (and (procedure? clean) (not state1) state2) (clean) (void))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
