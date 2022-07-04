@@ -19,6 +19,22 @@
                     (define matrix (make-vector (* len wid) v))
                     (define/private get-index (lambda (i j) (+ (* i length) j)))
                     (define/private locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
+                    (define/public location-of
+                      (lambda (value pred [index 0])
+                        (locate-index
+                         (let loop ((index index))
+                           (if (= index (* width length))
+                               #f
+                               (let ((element (vector-ref matrix index))) (if (pred value element) index (loop (add1 index)))))))))
+                    (define/public locations-of
+                      (lambda (value pred)
+                        (let loop ((index 0) (result null))
+                          (define next-index (location-of value pred index))
+                          (if (not next-index)
+                              (reverse result)
+                              (loop (add1 next-index) (cons (let-values (((i j) (locate-index next-index))) (cons i j)) result))))))
+                    (define/public matrix-max (lambda ([proc values]) (vector-argmax proc matrix)))
+                    (define/public matrix-min (lambda ([proc values]) (vector-argmin proc matrix)))
                     (define/public matrix-ref (lambda (i j) (vector-ref matrix (get-index i j))))
                     (define/public matrix-set (lambda (i j v) (vector-set! matrix (get-index i j) v)))
                     (define/public submatrix
