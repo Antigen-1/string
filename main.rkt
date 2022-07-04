@@ -39,7 +39,11 @@
                     (define/public matrix-ref (lambda (i j) (vector-ref matrix (get-index i j))))
                     (define/public matrix-set (lambda (i j v) (vector-set! matrix (get-index i j) v)))
                     (define/public submatrix
-                      (lambda (i j) (apply vector-append (map (lambda (i) (vector-copy matrix (* i length) (add1 (+ j (* i length))))) (range (add1 i))))))
+                      (lambda (i j)
+                        (new matrix%
+                             [len (add1 j)]
+                             [wid (add1 i)]
+                             [mat (apply vector-append (map (lambda (i) (vector-copy matrix (* i length) (add1 (+ j (* i length))))) (range (add1 i))))])))
                     (define/public matrix->list (lambda () (vector->list matrix))))))
 
 (require 'data)
