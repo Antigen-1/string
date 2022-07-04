@@ -19,6 +19,7 @@
                     (define width wid)
                     (define matrix (make-vector (* len wid) v))
                     (define/private get-index (lambda (i j) (+ (* i length) j)))
+                    (define/private locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
                     (define/public data-ref (lambda (i j) (vector-ref matrix (get-index i j))))
                     (define/public data-set (lambda (i j v) (vector-set! matrix (get-index i j) v)))
                     (define/public subdata
