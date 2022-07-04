@@ -123,6 +123,30 @@
             (loop next-i next-j))
            (else (loop next-i next-j))))))))
 
+(define longest-common-subsequence-length
+  (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
+    (define len1 (bytes-length bytes1))
+    (define len2 (bytes-length bytes2))
+    (define result (new matrix% [len len2] [wid len1] [v 0]))
+    (let loop ((i 0) (j 0))
+      (cond
+        ((and (not i) (not j))
+         (send result matrix-max))
+        (else
+         (define state1 (= len1 (add1 i)))
+         (define state2 (= len2 (add1 j)))
+         (define-values (next-i next-j)
+           (cond ((and state1 state2) (values #f #f))
+                 (state2 (values (add1 i) 0))
+                 (else (values i (add1 j)))))
+         (cond
+           ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
+            (if (or (< (sub1 i) 0) (< (sub1 j) 0))
+                (send result matrix-set i j 1)
+                (send result matrix-set i j (add1 (send (send result submatrix (sub1 i) (sub1 j)) matrix-max))))
+            (loop next-i next-j))
+           (else (loop next-i next-j))))))))
+
 ;;Sqlite3 is necessary.
 (define save-pattern
   (lambda (path [table-name "pattern"] [mode 'create])
