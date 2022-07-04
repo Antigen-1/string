@@ -8,8 +8,39 @@
          longest-common-subsequence-length)
 
 (module data racket/base
-  (require racket/class racket/vector racket/list)
-  (provide matrix%)
+  (require racket/class racket/vector racket/list racket/match)
+  (provide matrix% hash-matrix%)
+  (define hash-matrix%
+    (class object%
+      (init len)
+      (init wid)
+      (init [v 0])
+      (init [mat #f])
+      (super-new)
+      (define length len)
+      (define width wid)
+      (define matrix (if (hash? mat) mat (make-hash)))
+      (define value v)
+      (define/public matrix-ref (lambda (i j) (hash-ref matrix (cons i j) value)))
+      (define/public matrix-set (lambda (i j v) (hash-set! matrix (cons i j) v)))
+      (define/public matrix->list (lambda () (hash->list matrix)))
+      (define/public submatrix (lambda (end-i end-j)
+                                 (define submatrix (new hash-matrix% [v value]))
+                                 (match matrix
+                                   ((hash-table ((cons i j) v) ...)
+                                    (map (lambda (i j v) (if (and (<= i end-i) (<= j end-j)) (send submatrix matrix-set i j v) (void))) i j v)))
+                                 submatrix))
+      (define/public location-of (lambda (value pred)
+                                   (define location
+                                     (car
+                                      (findf
+                                       (lambda (element) (pred value (cdr element)))
+                                       (sort (hash->list matrix) #:key (lambda (e) (let ((i (caar e)) (j (cdar e))) (+ j (* i length)))) <))))
+                                   (values (car location) (cdr location))))
+      (define/public locations-of (lambda (value pred)
+                                    (filter values (hash-map matrix (lambda (p v) (if (pred value v) p #f)) #t))))
+      (define/public matrix-max (lambda ([proc values]) (apply argmax proc (hash-values matrix))))
+      (define/public matrix-min (lambda ([proc values]) (apply argmin proc (hash-values matrix))))))
   (define matrix% (class object%
                     (init len)
                     (init wid)
