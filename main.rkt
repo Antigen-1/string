@@ -21,11 +21,10 @@
                     (define/private locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
                     (define/public location-of
                       (lambda (value pred [index 0])
-                        (locate-index
-                         (let loop ((index index))
-                           (if (= index (* width length))
-                               (values #f #f)
-                               (let ((element (vector-ref matrix index))) (if (pred value element) index (loop (add1 index)))))))))
+                        (let loop ((index index))
+                          (if (= index (* width length))
+                              (values #f #f)
+                              (let ((element (vector-ref matrix index))) (if (pred value element) (locate-index index) (loop (add1 index))))))))
                     (define/public locations-of
                       (lambda (value pred)
                         (let loop ((index 0) (result null))
