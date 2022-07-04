@@ -22,7 +22,7 @@
                     (define/public location-of
                       (lambda (value pred [index 0])
                         (let loop ((index index))
-                          (if (= index (* width length))
+                          (if (>= index (* width length))
                               (values #f #f)
                               (let ((element (vector-ref matrix index))) (if (pred value element) (locate-index index) (loop (add1 index))))))))
                     (define/public locations-of
