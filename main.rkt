@@ -9,8 +9,7 @@
 (module data racket/base
   (require racket/class racket/vector racket/list)
   (provide matrix%)
-  (define data (interface () data-ref data-set subdata))
-  (define matrix% (class* object% (data)
+  (define matrix% (class object%
                     (init len)
                     (init wid)
                     (init [v 0])
@@ -24,7 +23,7 @@
                     (define/public data-set (lambda (i j v) (vector-set! matrix (get-index i j) v)))
                     (define/public subdata
                       (lambda (i j) (apply vector-append (map (lambda (i) (vector-copy matrix (* i length) (add1 (+ j (* i length))))) (range (add1 i))))))
-                    (define/public matrix->list (lambda () (vector->list matrix))))))
+                    (define/public data->list (lambda () (vector->list matrix))))))
 
 (require 'data)
 
@@ -81,7 +80,7 @@
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
-         (define result-list (send result matrix->list))
+         (define result-list (send result data->list))
          (define maximum (apply max result-list))
          (map
           (lambda (index)
