@@ -144,7 +144,7 @@
                        (cond
                          ((> max 1)
                           (define-values (i j) (send result location-of max =))
-                          (let ((list (send (send result submatrix (sub1 i) (sub1 j)) matrix->list)))
+                          (let ((list (filter (lambda (e) (and (< (caar e) i) (< (cdar e) j))) (send result matrix->list))))
                             (map (lambda (e) (send result matrix-remove (caar e) (cdar e))) list))))))
           (void)))
     (let loop ((i 0) (j 0))
@@ -184,7 +184,7 @@
                        (cond
                          ((> max 1)
                           (define-values (i j) (send result location-of max =))
-                          (let ((list (send (send result submatrix (sub1 i) (sub1 j)) matrix->list)))
+                          (let ((list (filter (lambda (e) (and (< (caar e) i) (< (cdar e) j))) (send result matrix->list))))
                             (map (lambda (e) (send result matrix-remove (caar e) (cdar e))) list))))))
           (void)))
     (let loop ((i 0) (j 0))
