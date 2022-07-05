@@ -145,12 +145,11 @@
     (define result (new (if (<= (* len1 len2) (current-vector-size)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
     (define clean
       (if (and (is-a? result hash-matrix%) (current-clean-interval))
-          (lambda () (let ((max (send result matrix-max)))
-                       (cond
-                         ((> max 1)
-                          (define-values (i j) (send result location-of max =))
-                          (send result matrix-map
-                                (lambda (p v) (if (and (< (car p) i) (< (cdr p) j)) (send result matrix-remove (car p) (cdr p)) (void))))))))
+          (lambda (i j)
+            (cond
+              ((and (>= i 1) (>= j 1))
+               (send result matrix-map
+                     (lambda (p v) (if (< (car p) i) (send result matrix-remove (car p) (cdr p)) (void)))))))
           (void)))
     (let loop ((i 0) (j 0))
       (cond
@@ -169,7 +168,7 @@
            (cond ((and state1 state2) (values #f #f))
                  (state2 (values (add1 i) 0))
                  (else (values i (add1 j)))))
-         (cond ((and (procedure? clean) (not state1) state2) (if ((current-clean-interval)) (clean) (void))))
+         (cond ((and (procedure? clean) (not state1) state2) (if ((current-clean-interval)) (clean i j) (void))))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
@@ -179,19 +178,10 @@
            (else (loop next-i next-j))))))))
 
 (define longest-common-subsequence-length
-  (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
+  (lambda (bytes1 bytes2 [% hash-matrix%] #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
-    (define result (new (if (<= (* len1 len2) (current-vector-size)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
-    (define clean
-      (if (and (is-a? result hash-matrix%) (current-clean-interval))
-          (lambda () (let ((max (send result matrix-max)))
-                       (cond
-                         ((> max 1)
-                          (define-values (i j) (send result location-of max =))
-                          (send result matrix-map
-                                (lambda (p v) (if (and (< (car p) i) (< (cdr p) j)) (send result matrix-remove (car p) (cdr p)) (void))))))))
-          (void)))
+    (define result (new % [len len2] [wid len1] [v 0]))
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
@@ -203,7 +193,6 @@
            (cond ((and state1 state2) (values #f #f))
                  (state2 (values (add1 i) 0))
                  (else (values i (add1 j)))))
-         (cond ((and (procedure? clean) (not state1) state2) (if ((current-clean-interval)) (clean) (void))))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
