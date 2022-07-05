@@ -155,6 +155,7 @@
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (define r (if (or (< (sub1 i) 0) (< (sub1 j) 0)) 1 (add1 v)))
+            (vector-set! row j r)
             (define-values (next-m next-l) (cond ((> m r) (values m l)) ((= m r) (values m (cons (cons i j) l))) (else (values r (list (cons i j))))))
             (loop next-i next-j next-v next-m next-l))
            (else (loop next-i next-j next-v m l))))))))
