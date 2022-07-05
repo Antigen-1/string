@@ -3,9 +3,9 @@
 ;;发布该程序是希望它能有用，但是并无保障;甚至连可销售和符合某个特定的目的都不保证。请参看 GNU 通用公共许可证，了解详情。
 ;;你应该随程序获得一份 GNU 通用公共许可证的复本。如果没有，请看 <https://www.gnu.org/licenses/>。
 #lang racket/base
-(require db/base db/sqlite3 racket/match racket/list racket/class racket/generator)
+(require db/base db/sqlite3 racket/match racket/list racket/class)
 (provide table compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern get-longest-common-subbytes
-         longest-common-subsequence-length current-clean-interval)
+         longest-common-subsequence-length)
 
 (module data racket/base
   (require racket/class racket/vector racket/list racket/match racket/promise)
@@ -130,35 +130,21 @@
       (for/list ((file (in-directory)))
         (cons file (call-with-input-file file match-pattern*))))))
 
-(define current-clean-interval
-  (make-parameter #f
-                  (lambda (v)
-                    (generator () (let loop ((state 0)) (if (= v state) (begin (yield #t) (loop 0)) (begin (yield #f) (loop (add1 state)))))))))
-
 (define get-longest-common-subbytes
-  (lambda (bytes1 bytes2 [% matrix%] #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
+  (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
-    (define result (new % [len len2] [wid len1] [v 0]))
-    (define clean
-      (if (and (is-a? result hash-matrix%) (current-clean-interval))
-          (lambda (i j)
-            (define max (send result matrix-max))
-            (cond
-              ((and (>= i 1) (>= j 1))
-               (send result matrix-map
-                     (lambda (p v) (if (and (< (car p) i) (not (= v max))) (send result matrix-remove (car p) (cdr p)) (void)))))))
-          (void)))
-    (let loop ((i 0) (j 0))
+    (define row (make-vector len2 0))
+    (let loop ((i 0) (j 0) (v 0) (m 0) (l null))
+      (define next-v (vector-ref row j))
       (cond
         ((and (not i) (not j))
-         (define maximum (send result matrix-max))
          (map
           (lambda (p)
             (define end (add1 (car p)))
-            (define start (- end maximum))
+            (define start (- end m))
             (subbytes bytes1 start end))
-          (send result locations-of maximum =)))
+          l))
         (else
          (define state1 (= len1 (add1 i)))
          (define state2 (= len2 (add1 j)))
@@ -168,12 +154,10 @@
                  (else (values i (add1 j)))))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
-            (if (or (< (sub1 i) 0) (< (sub1 j) 0))
-                (send result matrix-set i j 1)
-                (send result matrix-set i j (add1 (send result matrix-ref (sub1 i) (sub1 j)))))
-            ))
-         (cond ((and (procedure? clean) (not state1) state2) (if ((current-clean-interval)) (clean i j) (void))))
-         (loop next-i next-j))))))
+            (define r (if (or (< (sub1 i) 0) (< (sub1 j) 0)) 1 (add1 v)))
+            (define-values (next-m next-l) (cond ((> m r) (values m l)) ((= m r) (values m (cons (cons i j) l))) (else (values r (list (cons i j))))))
+            (loop next-i next-j next-v next-m next-l))
+           (else (loop next-i next-j next-v m l))))))))
 
 (define longest-common-subsequence-length
   (lambda (bytes1 bytes2 [% hash-matrix%] #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
