@@ -136,11 +136,11 @@
     (define clean
       (if (is-a? result hash-matrix%)
           (lambda () (let ((max (send result matrix-max)))
-                       (define-values (i j) (send result location-of max =))
-                       (if (and (>= i 1) (>= j 1))
-                           (let ((list (send (send result submatrix (sub1 i) (sub1 j)) matrix->list)))
-                             (map (lambda (e) (send result matrix-remove (caar e) (cdar e))) list))
-                           (void))))
+                       (cond
+                         ((> max 1)
+                          (define-values (i j) (send result location-of max =))
+                          (let ((list (send (send result submatrix (sub1 i) (sub1 j)) matrix->list)))
+                            (map (lambda (e) (send result matrix-remove (caar e) (cdar e))) list))))))
           (void)))
     (let loop ((i 0) (j 0))
       (cond
