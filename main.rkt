@@ -37,6 +37,7 @@
                                       (if (pred value element) (let-values (((i j) (locate-index index))) `(,@result ,(cons i j))) result)))))))
                     (define/public matrix-max (lambda ([proc values]) (vector-argmax proc (force matrix))))
                     (define/public matrix-min (lambda ([proc values]) (vector-argmin proc (force matrix))))
+                    (define/public matrix-map (lambda (proc) (vector-map proc matrix)))
                     (define/public matrix-ref (lambda (i j) (vector-ref (force matrix) (get-index i j))))
                     (define/public matrix-set (lambda (i j v) (vector-set! (force matrix) (get-index i j) v)))
                     (define/public submatrix
@@ -59,6 +60,7 @@
       (super-new [len length] [wid width])
       (inherit get-index)
       (define/public matrix-remove (lambda (i j) (hash-remove! (force matrix) (cons i j))))
+      (define/override matrix-map (lambda (proc [order? #f]) (hash-map matrix proc order?)))
       (define/override matrix-ref (lambda (i j) (hash-ref (force matrix) (cons i j) value)))
       (define/override matrix-set (lambda (i j v) (hash-set! (force matrix) (cons i j) v)))
       (define/override matrix->list (lambda () (hash->list (force matrix))))
@@ -147,8 +149,8 @@
                        (cond
                          ((> max 1)
                           (define-values (i j) (send result location-of max =))
-                          (let ((list (filter (lambda (e) (and (< (caar e) i) (< (cdar e) j))) (send result matrix->list))))
-                            (map (lambda (e) (send result matrix-remove (caar e) (cdar e))) list))))))
+                          (send result matrix-map
+                                (lambda (p v) (if (and (< (car p) i) (< (cdr p) j)) (send result matrix-remove (car p) (cdr p)) (void))))))))
           (void)))
     (let loop ((i 0) (j 0))
       (cond
@@ -187,8 +189,8 @@
                        (cond
                          ((> max 1)
                           (define-values (i j) (send result location-of max =))
-                          (let ((list (filter (lambda (e) (and (< (caar e) i) (< (cdar e) j))) (send result matrix->list))))
-                            (map (lambda (e) (send result matrix-remove (caar e) (cdar e))) list))))))
+                          (send result matrix-map
+                                (lambda (p v) (if (and (< (car p) i) (< (cdr p) j)) (send result matrix-remove (car p) (cdr p)) (void))))))))
           (void)))
     (let loop ((i 0) (j 0))
       (cond
