@@ -136,7 +136,6 @@
     (define len2 (bytes-length bytes2))
     (define row (make-vector len2 0))
     (let loop ((i 0) (j 0) (v 0) (m 0) (l null))
-      (define next-v (vector-ref row j))
       (cond
         ((and (not i) (not j))
          (map
@@ -146,6 +145,7 @@
             (subbytes bytes1 start end))
           l))
         (else
+         (define next-v (vector-ref row j))
          (define state1 (= len1 (add1 i)))
          (define state2 (= len2 (add1 j)))
          (define-values (next-i next-j)
