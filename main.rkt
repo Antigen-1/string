@@ -5,7 +5,7 @@
 #lang racket/base
 (require db/base db/sqlite3 racket/match racket/list racket/class racket/generator)
 (provide table compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern get-longest-common-subbytes
-         longest-common-subsequence-length)
+         longest-common-subsequence-length current-clean-interval)
 
 (module data racket/base
   (require racket/class racket/vector racket/list racket/match racket/promise)
