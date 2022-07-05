@@ -143,10 +143,11 @@
     (define clean
       (if (and (is-a? result hash-matrix%) (current-clean-interval))
           (lambda (i j)
+            (define max (send result matrix-max))
             (cond
               ((and (>= i 1) (>= j 1))
                (send result matrix-map
-                     (lambda (p v) (if (< (car p) i) (send result matrix-remove (car p) (cdr p)) (void)))))))
+                     (lambda (p v) (if (and (< (car p) i) (not (= v max))) (send result matrix-remove (car p) (cdr p)) (void)))))))
           (void)))
     (let loop ((i 0) (j 0))
       (cond
