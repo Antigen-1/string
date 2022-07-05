@@ -129,7 +129,7 @@
         (cons file (call-with-input-file file match-pattern*))))))
 
 (define current-clean-interval
-  (make-parameter (lambda () #f)
+  (make-parameter #f
                   (lambda (v)
                     (generator () (let loop ((state 0)) (if (= v state) (begin (yield #t) (loop 0)) (begin (yield #f) (loop (add1 state)))))))))
 
@@ -142,7 +142,7 @@
     (define len2 (bytes-length bytes2))
     (define result (new (if (<= (* len1 len2) (current-vector-size)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
     (define clean
-      (if (is-a? result hash-matrix%)
+      (if (and (is-a? result hash-matrix%) (current-clean-interval))
           (lambda () (let ((max (send result matrix-max)))
                        (cond
                          ((> max 1)
@@ -182,7 +182,7 @@
     (define len2 (bytes-length bytes2))
     (define result (new (if (<= (* len1 len2) (current-vector-size)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
     (define clean
-      (if (is-a? result hash-matrix%)
+      (if (and (is-a? result hash-matrix%) (current-clean-interval))
           (lambda () (let ((max (send result matrix-max)))
                        (cond
                          ((> max 1)
