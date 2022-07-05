@@ -3,7 +3,7 @@
 ;;发布该程序是希望它能有用，但是并无保障;甚至连可销售和符合某个特定的目的都不保证。请参看 GNU 通用公共许可证，了解详情。
 ;;你应该随程序获得一份 GNU 通用公共许可证的复本。如果没有，请看 <https://www.gnu.org/licenses/>。
 #lang racket/base
-(require db/base db/sqlite3 racket/match racket/list racket/class)
+(require db/base db/sqlite3 racket/match racket/list racket/class racket/generator)
 (provide table compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern get-longest-common-subbytes
          longest-common-subsequence-length)
 
@@ -128,6 +128,11 @@
       (for/list ((file (in-directory)))
         (cons file (call-with-input-file file match-pattern*))))))
 
+(define current-clean-interval
+  (make-parameter (lambda () #f)
+                  (lambda (v)
+                    (generator () (let loop ((state 0)) (if (= v state) (begin (yield #t) (loop 0)) (begin (yield #f) (loop (add1 state)))))))))
+
 (define get-longest-common-subbytes
   (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
@@ -159,7 +164,7 @@
            (cond ((and state1 state2) (values #f #f))
                  (state2 (values (add1 i) 0))
                  (else (values i (add1 j)))))
-         (if (and (procedure? clean) (not state1) state2) (clean) (void))
+         (cond ((and (procedure? clean) (not state1) state2) (if ((current-clean-interval)) (clean) (void))))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
@@ -193,7 +198,7 @@
            (cond ((and state1 state2) (values #f #f))
                  (state2 (values (add1 i) 0))
                  (else (values i (add1 j)))))
-         (if (and (procedure? clean) (not state1) state2) (clean) (void))
+         (cond ((and (procedure? clean) (not state1) state2) (if ((current-clean-interval)) (clean) (void))))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
