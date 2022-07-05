@@ -37,7 +37,7 @@
                                       (if (pred value element) (let-values (((i j) (locate-index index))) `(,@result ,(cons i j))) result)))))))
                     (define/public matrix-max (lambda ([proc values]) (vector-argmax proc (force matrix))))
                     (define/public matrix-min (lambda ([proc values]) (vector-argmin proc (force matrix))))
-                    (define/public matrix-map (lambda (proc) (vector-map proc matrix)))
+                    (define/public matrix-map (lambda (proc) (vector-map proc (force matrix))))
                     (define/public matrix-ref (lambda (i j) (vector-ref (force matrix) (get-index i j))))
                     (define/public matrix-set (lambda (i j v) (vector-set! (force matrix) (get-index i j) v)))
                     (define/public submatrix
@@ -60,7 +60,7 @@
       (super-new [len length] [wid width])
       (inherit get-index)
       (define/public matrix-remove (lambda (i j) (hash-remove! (force matrix) (cons i j))))
-      (define/override matrix-map (lambda (proc [order? #f]) (hash-map matrix proc order?)))
+      (define/override matrix-map (lambda (proc [order? #f]) (hash-map (force matrix) proc order?)))
       (define/override matrix-ref (lambda (i j) (hash-ref (force matrix) (cons i j) value)))
       (define/override matrix-set (lambda (i j v) (hash-set! (force matrix) (cons i j) v)))
       (define/override matrix->list (lambda () (hash->list (force matrix))))
