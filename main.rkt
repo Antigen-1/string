@@ -158,7 +158,9 @@
             (vector-set! row j r)
             (define-values (next-m next-l) (cond ((> m r) (values m l)) ((= m r) (values m (cons (cons i j) l))) (else (values r (list (cons i j))))))
             (loop next-i next-j next-v next-m next-l))
-           (else (loop next-i next-j next-v m l))))))))
+           (else
+            (vector-set! row j 0)
+            (loop next-i next-j next-v m l))))))))
 
 (define longest-common-subsequence-length
   (lambda (bytes1 bytes2 [% hash-matrix%] #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
