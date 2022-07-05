@@ -173,6 +173,15 @@
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
     (define result (new (if (<= (* len1 len2) (expt 10 7)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
+    (define clean
+      (if (is-a? result hash-matrix%)
+          (lambda () (let ((max (send result matrix-max)))
+                       (cond
+                         ((> max 1)
+                          (define-values (i j) (send result location-of max =))
+                          (let ((list (send (send result submatrix (sub1 i) (sub1 j)) matrix->list)))
+                            (map (lambda (e) (send result matrix-remove (caar e) (cdar e))) list))))))
+          (void)))
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
@@ -184,6 +193,7 @@
            (cond ((and state1 state2) (values #f #f))
                  (state2 (values (add1 i) 0))
                  (else (values i (add1 j)))))
+         (if (and (procedure? clean) (not state1) state2) (clean) (void))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
             (if (or (< (sub1 i) 0) (< (sub1 j) 0))
