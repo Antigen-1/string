@@ -5,7 +5,7 @@
 #lang racket/base
 (require db/base db/sqlite3 racket/match racket/list racket/class racket/generator)
 (provide table compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern get-longest-common-subbytes
-         longest-common-subsequence-length current-clean-interval current-vector-size)
+         longest-common-subsequence-length current-clean-interval)
 
 (module data racket/base
   (require racket/class racket/vector racket/list racket/match racket/promise)
@@ -135,14 +135,11 @@
                   (lambda (v)
                     (generator () (let loop ((state 0)) (if (= v state) (begin (yield #t) (loop 0)) (begin (yield #f) (loop (add1 state)))))))))
 
-(define current-vector-size
-  (make-parameter (expt 10 7)))
-
 (define get-longest-common-subbytes
-  (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
+  (lambda (bytes1 bytes2 [% matrix%] #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
-    (define result (new (if (<= (* len1 len2) (current-vector-size)) matrix% hash-matrix%) [len len2] [wid len1] [v 0]))
+    (define result (new % [len len2] [wid len1] [v 0]))
     (define clean
       (if (and (is-a? result hash-matrix%) (current-clean-interval))
           (lambda (i j)
