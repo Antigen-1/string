@@ -8,7 +8,7 @@
          longest-common-subsequence-length)
 
 (module data racket/base
-  (require racket/class racket/vector racket/list racket/match)
+  (require racket/class racket/vector racket/list racket/match racket/promise)
   (provide matrix% hash-matrix%)
   (define matrix% (class object%
                     (init len)
@@ -18,7 +18,7 @@
                     (super-new)
                     (define length len)
                     (define width wid)
-                    (define matrix (if (and (vector? mat) (not (immutable? mat))) mat (make-vector (* len wid) v)))
+                    (define matrix (delay (if (and (vector? mat) (not (immutable? mat))) mat (make-vector (* len wid) v))))
                     (define/public get-index (lambda (i j) (+ (* i length) j)))
                     (define/public locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
                     (define/public location-of
@@ -26,45 +26,45 @@
                         (let loop ((index 0))
                           (if (>= index (* width length))
                               (values #f #f)
-                              (let ((element (vector-ref matrix index))) (if (pred value element) (locate-index index) (loop (add1 index))))))))
+                              (let ((element (vector-ref (force matrix) index))) (if (pred value element) (locate-index index) (loop (add1 index))))))))
                     (define/public locations-of
                       (lambda (value pred)
                         (let loop ((index 0) (result null))
                           (if (>= index (* width length))
                               result
                               (loop (add1 index)
-                                    (let ((element (vector-ref matrix index)))
+                                    (let ((element (vector-ref (force matrix) index)))
                                       (if (pred value element) (let-values (((i j) (locate-index index))) `(,@result ,(cons i j))) result)))))))
-                    (define/public matrix-max (lambda ([proc values]) (vector-argmax proc matrix)))
-                    (define/public matrix-min (lambda ([proc values]) (vector-argmin proc matrix)))
-                    (define/public matrix-ref (lambda (i j) (vector-ref matrix (get-index i j))))
-                    (define/public matrix-set (lambda (i j v) (vector-set! matrix (get-index i j) v)))
+                    (define/public matrix-max (lambda ([proc values]) (vector-argmax proc (force matrix))))
+                    (define/public matrix-min (lambda ([proc values]) (vector-argmin proc (force matrix))))
+                    (define/public matrix-ref (lambda (i j) (vector-ref (force matrix) (get-index i j))))
+                    (define/public matrix-set (lambda (i j v) (vector-set! (force matrix) (get-index i j) v)))
                     (define/public submatrix
                       (lambda (i j)
                         (new matrix%
                              [len (add1 j)]
                              [wid (add1 i)]
-                             [mat (apply vector-append (map (lambda (i) (vector-copy matrix (* i length) (add1 (+ j (* i length))))) (range (add1 i))))])))
-                    (define/public matrix->list (lambda () (vector->list matrix)))))
+                             [mat (apply vector-append (map (lambda (i) (vector-copy (force matrix) (* i length) (add1 (+ j (* i length))))) (range (add1 i))))])))
+                    (define/public matrix->list (lambda () (vector->list (force matrix))))))
   (define hash-matrix%
     (class matrix%
       (init len)
       (init wid)
       (init [v 0])
       (init [mat #f])
-      (super-new)
       (define length len)
       (define width wid)
-      (define matrix (if (and (hash? mat) (not (immutable? mat))) mat (make-hash)))
+      (define matrix (delay (if (and (hash? mat) (not (immutable? mat))) mat (make-hash))))
       (define value v)
+      (super-new [len length] [wid width])
       (inherit get-index)
-      (define/public matrix-remove (lambda (i j) (hash-remove! matrix (cons i j))))
-      (define/override matrix-ref (lambda (i j) (hash-ref matrix (cons i j) value)))
-      (define/override matrix-set (lambda (i j v) (hash-set! matrix (cons i j) v)))
-      (define/override matrix->list (lambda () (hash->list matrix)))
+      (define/public matrix-remove (lambda (i j) (hash-remove! (force matrix) (cons i j))))
+      (define/override matrix-ref (lambda (i j) (hash-ref (force matrix) (cons i j) value)))
+      (define/override matrix-set (lambda (i j v) (hash-set! (force matrix) (cons i j) v)))
+      (define/override matrix->list (lambda () (hash->list (force matrix))))
       (define/override submatrix (lambda (end-i end-j)
-                                   (define submatrix (new hash-matrix% [v value]))
-                                   (match matrix
+                                   (define submatrix (new hash-matrix% [v value] [len (add1 end-j)] [wid (add1 end-i)]))
+                                   (match (force matrix)
                                      ((hash-table ((cons i j) v) ...)
                                       (map (lambda (i j v) (if (and (<= i end-i) (<= j end-j)) (send submatrix matrix-set i j v) (void))) i j v)))
                                    submatrix))
@@ -73,13 +73,13 @@
                                        (car
                                         (findf
                                          (lambda (element) (pred value (cdr element)))
-                                         (sort (hash->list matrix) #:key (lambda (e) (let ((i (caar e)) (j (cdar e))) (get-index i j))) <))))
+                                         (sort (hash->list (force matrix)) #:key (lambda (e) (let ((i (caar e)) (j (cdar e))) (get-index i j))) <))))
                                      (values (car location) (cdr location))))
       (define/override locations-of (lambda (value pred)
-                                      (sort (filter values (hash-map matrix (lambda (p v) (if (pred value v) p #f))))
+                                      (sort (filter values (hash-map (force matrix) (lambda (p v) (if (pred value v) p #f))))
                                             #:key (lambda (e) (let ((i (car e)) (j (cdr e))) (get-index i j))) <)))
-      (define/override matrix-max (lambda ([proc values]) (apply argmax proc (hash-values matrix))))
-      (define/override matrix-min (lambda ([proc values]) (apply argmin proc (hash-values matrix)))))))
+      (define/override matrix-max (lambda ([proc values]) (argmax proc (hash-values (force matrix)))))
+      (define/override matrix-min (lambda ([proc values]) (argmin proc (hash-values (force matrix))))))))
 
 (require 'data)
 
