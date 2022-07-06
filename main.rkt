@@ -51,15 +51,11 @@
                     (define/public matrix->list (lambda () (vector->list (force matrix))))))
   (define hash-matrix%
     (class matrix%
-      (init len)
-      (init wid)
       (init [v 0])
       (init [mat #f])
-      (define length len)
-      (define width wid)
+      (super-new)
       (define matrix (delay (if (and (hash? mat) (not (immutable? mat))) mat (make-hash))))
       (define value v)
-      (super-new [len length] [wid width])
       (inherit get-index)
       (define/public matrix-remove (lambda (i j) (hash-remove! (force matrix) (cons i j))))
       (define/override matrix-map (lambda (proc [order? #f]) (hash-map (force matrix) proc order?)))
