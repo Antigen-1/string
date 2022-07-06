@@ -3,85 +3,9 @@
 ;;发布该程序是希望它能有用，但是并无保障;甚至连可销售和符合某个特定的目的都不保证。请参看 GNU 通用公共许可证，了解详情。
 ;;你应该随程序获得一份 GNU 通用公共许可证的复本。如果没有，请看 <https://www.gnu.org/licenses/>。
 #lang racket/base
-(require db/base db/sqlite3 racket/match racket/list racket/class)
+(require db/base db/sqlite3 racket/match racket/list racket/vector)
 (provide table compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern get-longest-common-subbytes
          longest-common-subsequence-length)
-
-(module data racket/base
-  (require racket/class racket/vector racket/list racket/match racket/promise)
-  (provide matrix% hash-matrix%)
-  (define matrix% (class object%
-                    (init len)
-                    (init wid)
-                    (init [v 0])
-                    (init [mat #f])
-                    (super-new)
-                    (define length len)
-                    (define width wid)
-                    (define matrix (delay (if (and (vector? mat) (not (immutable? mat))) mat (make-vector (* len wid) v))))
-                    (define/public get-index (lambda (i j) (+ (* i length) j)))
-                    (define/public locate-index (lambda (index) (define-values (i j) (quotient/remainder index length)) (values i (sub1 j))))
-                    (define/public location-of
-                      (lambda (value pred)
-                        (let loop ((index 0))
-                          (if (>= index (* width length))
-                              (values #f #f)
-                              (let ((element (vector-ref (force matrix) index))) (if (pred value element) (locate-index index) (loop (add1 index))))))))
-                    (define/public locations-of
-                      (lambda (value pred)
-                        (let loop ((index 0) (result null))
-                          (if (>= index (* width length))
-                              result
-                              (loop (add1 index)
-                                    (let ((element (vector-ref (force matrix) index)))
-                                      (if (pred value element) (let-values (((i j) (locate-index index))) `(,@result ,(cons i j))) result)))))))
-                    (define/public matrix-max (lambda ([proc values]) (vector-argmax proc (force matrix))))
-                    (define/public matrix-min (lambda ([proc values]) (vector-argmin proc (force matrix))))
-                    (define/public matrix-map (lambda (proc) (vector-map proc (force matrix))))
-                    (define/public matrix-ref (lambda (i j) (vector-ref (force matrix) (get-index i j))))
-                    (define/public matrix-set (lambda (i j v) (vector-set! (force matrix) (get-index i j) v)))
-                    (define/public submatrix
-                      (lambda (i j)
-                        (define submatrix (make-vector (* (add1 i) (add1 j)) 0))
-                        (map (lambda (i) (vector-copy! submatrix (* i (add1 j)) (force matrix) (* i length) (add1 (+ j (* i length))))) (range (add1 i)))
-                        (new matrix%
-                             [len (add1 j)]
-                             [wid (add1 i)]
-                             [mat submatrix])))
-                    (define/public matrix->list (lambda () (vector->list (force matrix))))))
-  (define hash-matrix%
-    (class matrix%
-      (init [v 0])
-      (init [mat #f])
-      (super-new)
-      (define matrix (delay (if (and (hash? mat) (not (immutable? mat))) mat (make-hash))))
-      (define value v)
-      (inherit get-index)
-      (define/public matrix-remove (lambda (i j) (hash-remove! (force matrix) (cons i j))))
-      (define/override matrix-map (lambda (proc [order? #f]) (hash-map (force matrix) proc order?)))
-      (define/override matrix-ref (lambda (i j) (hash-ref (force matrix) (cons i j) value)))
-      (define/override matrix-set (lambda (i j v) (hash-set! (force matrix) (cons i j) v)))
-      (define/override matrix->list (lambda () (hash->list (force matrix))))
-      (define/override submatrix (lambda (end-i end-j)
-                                   (define submatrix (make-hash))
-                                   (match (force matrix)
-                                     ((hash-table ((cons i j) v) ...)
-                                      (map (lambda (i j v) (if (and (<= i end-i) (<= j end-j)) (hash-set! submatrix (cons i j) v) (void))) i j v)))
-                                   (new hash-matrix% [len (add1 end-j)] [wid (add1 end-i)] [mat submatrix])))
-      (define/override location-of (lambda (value pred)
-                                     (define location
-                                       (car
-                                        (findf
-                                         (lambda (element) (pred value (cdr element)))
-                                         (sort (hash->list (force matrix)) #:key (lambda (e) (let ((i (caar e)) (j (cdar e))) (get-index i j))) <))))
-                                     (values (car location) (cdr location))))
-      (define/override locations-of (lambda (value pred)
-                                      (sort (filter values (hash-map (force matrix) (lambda (p v) (if (pred value v) p #f))))
-                                            #:key (lambda (e) (let ((i (car e)) (j (cdr e))) (get-index i j))) <)))
-      (define/override matrix-max (lambda ([proc values]) (argmax proc (hash-values (force matrix)))))
-      (define/override matrix-min (lambda ([proc values]) (argmin proc (hash-values (force matrix))))))))
-
-(require 'data)
 
 (define table (make-hash))
 
@@ -161,14 +85,14 @@
             (loop next-i next-j next-v m l))))))))
 
 (define longest-common-subsequence-length
-  (lambda (bytes1 bytes2 [% hash-matrix%] #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
+  (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
-    (define result (new % [len len2] [wid len1] [v 0]))
+    (define max (make-vector len2 0))
     (let loop ((i 0) (j 0))
       (cond
         ((and (not i) (not j))
-         (send result matrix-max))
+         (vector-argmax values max))
         (else
          (define state1 (= len1 (add1 i)))
          (define state2 (= len2 (add1 j)))
@@ -178,11 +102,12 @@
                  (else (values i (add1 j)))))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
-            (if (or (< (sub1 i) 0) (< (sub1 j) 0))
-                (send result matrix-set i j 1)
-                (send result matrix-set i j (add1 (send (send result submatrix (sub1 i) (sub1 j)) matrix-max))))
-            (loop next-i next-j))
-           (else (loop next-i next-j))))))))
+            (define r
+              (if (or (< (sub1 i) 0) (< (sub1 j) 0))
+                  1
+                  (add1 (vector-argmax values (vector-copy max 0 j)))))
+            (if (> r (vector-ref max j)) (vector-set! max j r) (void))))
+         (loop next-i next-j))))))
 
 ;;Sqlite3 is necessary.
 (define save-pattern
