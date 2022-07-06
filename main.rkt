@@ -42,10 +42,12 @@
                     (define/public matrix-set (lambda (i j v) (vector-set! (force matrix) (get-index i j) v)))
                     (define/public submatrix
                       (lambda (i j)
+                        (define submatrix (make-vector (* (add1 i) (add1 j)) 0))
+                        (map (lambda (i) (vector-copy! submatrix (* i (add1 j)) (force matrix) (* i length) (add1 (+ j (* i length))))) (range (add1 i)))
                         (new matrix%
                              [len (add1 j)]
                              [wid (add1 i)]
-                             [mat (apply vector-append (map (lambda (i) (vector-copy (force matrix) (* i length) (add1 (+ j (* i length))))) (range (add1 i))))])))
+                             [mat submatrix])))
                     (define/public matrix->list (lambda () (vector->list (force matrix))))))
   (define hash-matrix%
     (class matrix%
