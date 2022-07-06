@@ -63,11 +63,11 @@
       (define/override matrix-set (lambda (i j v) (hash-set! (force matrix) (cons i j) v)))
       (define/override matrix->list (lambda () (hash->list (force matrix))))
       (define/override submatrix (lambda (end-i end-j)
-                                   (define submatrix (new hash-matrix% [v value] [len (add1 end-j)] [wid (add1 end-i)]))
+                                   (define submatrix (make-hash))
                                    (match (force matrix)
                                      ((hash-table ((cons i j) v) ...)
-                                      (map (lambda (i j v) (if (and (<= i end-i) (<= j end-j)) (send submatrix matrix-set i j v) (void))) i j v)))
-                                   submatrix))
+                                      (map (lambda (i j v) (if (and (<= i end-i) (<= j end-j)) (hash-set! submatrix (cons i j) v) (void))) i j v)))
+                                   (new hash-matrix% [len (add1 end-j)] [wid (add1 end-i)] [mat submatrix])))
       (define/override location-of (lambda (value pred)
                                      (define location
                                        (car
