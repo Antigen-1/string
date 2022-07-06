@@ -141,7 +141,7 @@
             (define end (add1 (car p)))
             (define start (- end m))
             (subbytes bytes1 start end))
-          l))
+          (reverse l)))
         (else
          (define next-v (vector-ref row j))
          (define state1 (= len1 (add1 i)))
