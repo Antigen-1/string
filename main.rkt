@@ -89,25 +89,22 @@
     (define len1 (bytes-length bytes1))
     (define len2 (bytes-length bytes2))
     (define max (make-vector len2 0))
-    (let loop ((i 0) (j 0))
+    (let loop ((i 0) (j 0) (m 0))
       (cond
-        ((and (not i) (not j))
+        ((and (not i) (not j) (not m))
          (vector-argmax values max))
         (else
          (define state1 (= len1 (add1 i)))
          (define state2 (= len2 (add1 j)))
-         (define-values (next-i next-j)
-           (cond ((and state1 state2) (values #f #f))
-                 (state2 (values (add1 i) 0))
-                 (else (values i (add1 j)))))
+         (define-values (next-i next-j next-m)
+           (cond ((and state1 state2) (values #f #f #f))
+                 (state2 (values (add1 i) 0 0))
+                 (else (values i (add1 j) (if (>= m (vector-ref max j)) m (vector-ref max j))))))
          (cond
            ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
-            (define r
-              (if (or (< (sub1 i) 0) (< (sub1 j) 0))
-                  1
-                  (add1 (vector-argmax values (vector-copy max 0 j)))))
+            (define r (add1 m))
             (if (> r (vector-ref max j)) (vector-set! max j r) (void))))
-         (loop next-i next-j))))))
+         (loop next-i next-j next-m))))))
 
 ;;Sqlite3 is necessary.
 (define save-pattern
