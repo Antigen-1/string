@@ -72,7 +72,7 @@
          (cond
            ((byte=? (car l1) (car l2))
             (define v (add1 (car o)))
-            (define next-m (cond ((> (cdar m) v) m) ((= (cdar m) v) (cons (cons i v) m)) (else (cons (cons i v) null))))
+            (define next-m (cond ((or (null? m) (< (cdar m) v)) (cons (cons i v) null)) ((> (cdar m) v) m) (else (cons (cons i v) m))))
             (define next-r (if (null? (cdr l2)) null (cons v r)))
             (loop next-i next-o next-r next-m next-l1 next-l2))
            (else
