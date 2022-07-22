@@ -101,7 +101,8 @@
             (loop next-o next-r next-rm next-m next-l1 next-l2))
            (else
             (define next-rm (if state 0 rm))
-            (loop next-o (cons 0 r) next-rm m next-l1 next-l2))))))))
+            (define next-r (if state null (cons 0 r)))
+            (loop next-o next-r next-rm m next-l1 next-l2))))))))
 
 ;;Sqlite3 is necessary.
 (define save-pattern
