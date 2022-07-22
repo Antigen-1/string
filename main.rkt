@@ -56,27 +56,28 @@
   (lambda (bytes1 bytes2 #:bytes->list [bytes->list bytes->list] #:byte=? [byte=? =] #:subbytes [subbytes subbytes])
     (define list2 (bytes->list bytes2))
     (define len2 (length list2))
-    (let loop ((o (make-list len2 0)) (r null) (m 0) (l1 (bytes->list bytes1)) (l2 list2))
+    (let loop ((i 0) (o (make-list len2 0)) (r null) (m null) (l1 (bytes->list bytes1)) (l2 list2))
       (cond
         ((null? l1)
          (map
           (lambda (p)
-            (define end (add1 p))
-            (define start (- end m))
-            (subbytes bytes2 start end))
-          (indexes-of (reverse r) m =)))
+            (define end (add1 (car p)))
+            (define start (- end (cdr p)))
+            (subbytes bytes1 start end))
+          m))
         (else
-         (define-values (next-l1 next-l2 next-o)
-           (cond ((null? (cdr l2)) (values (cdr l1) list2 (cons 0 (reverse r))))
-                 (else (values l1 (cdr l2) (cdr o)))))
+         (define-values (next-i next-l1 next-l2 next-o)
+           (cond ((null? (cdr l2)) (values (add1 i) (cdr l1) list2 (cons 0 (reverse r))))
+                 (else (values i l1 (cdr l2) (cdr o)))))
          (cond
            ((byte=? (car l1) (car l2))
             (define v (add1 (car o)))
-            (define next-m (max v m))
+            (define next-m (cond ((> (cdar m) v) m) ((= (cdar m) v) (cons (cons i v) m)) (else (cons (cons i v) null))))
             (define next-r (if (null? (cdr l2)) null (cons v r)))
-            (loop next-o next-r next-m next-l1 next-l2))
+            (loop next-i next-o next-r next-m next-l1 next-l2))
            (else
-            (loop next-o (cons 0 r) m next-l1 next-l2))))))))
+            (define next-r (if (null? (cdr l2)) null (cons 0 r)))
+            (loop next-i next-o next-r m next-l1 next-l2))))))))
 
 (define longest-common-subsequence-length
   (lambda (bytes1 bytes2 #:bytes->list [bytes->list bytes->list] #:byte=? [byte=? =])
@@ -93,8 +94,8 @@
                  (else (values l1 (cdr l2) (cdr o)))))
          (cond
            ((byte=? (car l1) (car l2))
-            (define v (add1 (max (car o) rm)))
-            (define next-rm (if state 0 (max rm v)))
+            (define v (add1 rm))
+            (define next-rm (if state 0 (max rm (car o))))
             (define next-m (max v m))
             (define next-r (if state null (cons v r)))
             (loop next-o next-r next-rm next-m next-l1 next-l2))
