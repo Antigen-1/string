@@ -3,7 +3,7 @@
 ;;发布该程序是希望它能有用，但是并无保障;甚至连可销售和符合某个特定的目的都不保证。请参看 GNU 通用公共许可证，了解详情。
 ;;你应该随程序获得一份 GNU 通用公共许可证的复本。如果没有，请看 <https://www.gnu.org/licenses/>。
 #lang racket/base
-(require db/base db/sqlite3 racket/match racket/list racket/vector)
+(require db/base db/sqlite3 racket/match racket/list)
 (provide table compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern get-longest-common-subbytes
          longest-common-subsequence-length)
 
@@ -53,58 +53,54 @@
         (cons file (call-with-input-file file match-pattern*))))))
 
 (define get-longest-common-subbytes
-  (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
-    (define len1 (bytes-length bytes1))
-    (define len2 (bytes-length bytes2))
-    (define row (make-vector len2 0))
-    (let loop ((i 0) (j 0) (v 0) (m 0) (l null))
+  (lambda (bytes1 bytes2 #:bytes->list [bytes->list bytes->list] #:byte=? [byte=? =] #:subbytes [subbytes subbytes])
+    (define list2 (bytes->list bytes2))
+    (define len2 (length list2))
+    (let loop ((o (make-list len2 0)) (r null) (m 0) (l1 (bytes->list bytes1)) (l2 list2))
       (cond
-        ((and (not i) (not j))
+        ((null? l1)
          (map
           (lambda (p)
-            (define end (add1 (car p)))
+            (define end (add1 p))
             (define start (- end m))
-            (subbytes bytes1 start end))
-          (reverse l)))
+            (subbytes bytes2 start end))
+          (indexes-of (reverse r) m =)))
         (else
-         (define next-v (vector-ref row j))
-         (define state1 (= len1 (add1 i)))
-         (define state2 (= len2 (add1 j)))
-         (define-values (next-i next-j)
-           (cond ((and state1 state2) (values #f #f))
-                 (state2 (values (add1 i) 0))
-                 (else (values i (add1 j)))))
+         (define-values (next-l1 next-l2 next-o)
+           (cond ((null? (cdr l2)) (values (cdr l1) list2 (cons 0 (reverse r))))
+                 (else (values l1 (cdr l2) (cdr o)))))
          (cond
-           ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
-            (define r (if (or (< (sub1 i) 0) (< (sub1 j) 0)) 1 (add1 v)))
-            (vector-set! row j r)
-            (define-values (next-m next-l) (cond ((> m r) (values m l)) ((= m r) (values m (cons (cons i j) l))) (else (values r (list (cons i j))))))
-            (loop next-i next-j next-v next-m next-l))
+           ((byte=? (car l1) (car l2))
+            (define v (add1 (car o)))
+            (define next-m (max v m))
+            (define next-r (if (null? (cdr l2)) null (cons v r)))
+            (loop next-o next-r next-m next-l1 next-l2))
            (else
-            (vector-set! row j 0)
-            (loop next-i next-j next-v m l))))))))
+            (loop next-o (cons 0 r) m next-l1 next-l2))))))))
 
 (define longest-common-subsequence-length
-  (lambda (bytes1 bytes2 #:bytes-length [bytes-length bytes-length] #:byte=? [byte=? =] #:subbytes [subbytes subbytes] #:bytes-ref [bytes-ref bytes-ref])
-    (define len1 (bytes-length bytes1))
-    (define len2 (bytes-length bytes2))
-    (define max (make-vector len2 0))
-    (let loop ((i 0) (j 0) (m 0))
+  (lambda (bytes1 bytes2 #:bytes->list [bytes->list bytes->list] #:byte=? [byte=? =])
+    (define list2 (bytes->list bytes2))
+    (define len2 (length list2))
+    (let loop ((o (make-list len2 0)) (r null) (rm 0) (m 0) (l1 (bytes->list bytes1)) (l2 list2))
       (cond
-        ((and (not i) (not j) (not m))
-         (vector-argmax values max))
+        ((null? l1)
+         m)
         (else
-         (define state1 (= len1 (add1 i)))
-         (define state2 (= len2 (add1 j)))
-         (define-values (next-i next-j next-m)
-           (cond ((and state1 state2) (values #f #f #f))
-                 (state2 (values (add1 i) 0 0))
-                 (else (values i (add1 j) (if (>= m (vector-ref max j)) m (vector-ref max j))))))
+         (define state (null? (cdr l2)))
+         (define-values (next-l1 next-l2 next-o)
+           (cond (state (values (cdr l1) list2 (cons 0 (reverse r))))
+                 (else (values l1 (cdr l2) (cdr o)))))
          (cond
-           ((byte=? (bytes-ref bytes1 i) (bytes-ref bytes2 j))
-            (define r (add1 m))
-            (if (> r (vector-ref max j)) (vector-set! max j r) (void))))
-         (loop next-i next-j next-m))))))
+           ((byte=? (car l1) (car l2))
+            (define v (add1 (max (car o) rm)))
+            (define next-rm (if state 0 (max rm v)))
+            (define next-m (max v m))
+            (define next-r (if state null (cons v r)))
+            (loop next-o next-r next-rm next-m next-l1 next-l2))
+           (else
+            (define next-rm (if state 0 rm))
+            (loop next-o (cons 0 r) next-rm m next-l1 next-l2))))))))
 
 ;;Sqlite3 is necessary.
 (define save-pattern
