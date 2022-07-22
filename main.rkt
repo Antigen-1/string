@@ -94,7 +94,7 @@
                  (else (values l1 (cdr l2) (cdr o)))))
          (cond
            ((byte=? (car l1) (car l2))
-            (define crm (max rm (car 0)))
+            (define crm (max rm (car o)))
             (define v (add1 crm))
             (define next-rm (if state 0 crm))
             (define next-m (max v m))
