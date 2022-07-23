@@ -4,10 +4,12 @@
 ;;你应该随程序获得一份 GNU 通用公共许可证的复本。如果没有，请看 <https://www.gnu.org/licenses/>。
 #lang racket/base
 (require db/base db/sqlite3 racket/match racket/list)
-(provide table compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern get-longest-common-subbytes
-         longest-common-subsequence-length)
+(provide compile-pattern match-pattern match-pattern* match-in-directory save-pattern load-pattern get-longest-common-subbytes
+         longest-common-subsequence-length clear)
 
 (define table (make-hash))
+
+(define clear (lambda () (hash-clear! table)))
 
 (define compile-pattern
   (lambda (bytes)
